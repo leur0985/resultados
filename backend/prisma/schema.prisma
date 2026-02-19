@@ -1,0 +1,305 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model arbitros {
+  id               BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  iniciales        String     @db.VarChar(5)
+  nombre           String     @db.VarChar(255)
+  fecha_nacimiento DateTime?  @db.Date
+  foto             String?    @db.VarChar(255)
+  pais_id          BigInt?    @db.UnsignedBigInt
+  created_at       DateTime?  @db.Timestamp(0)
+  updated_at       DateTime?  @db.Timestamp(0)
+  paises           paises?    @relation(fields: [pais_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "arbitros_pais_id_foreign")
+  partidos         partidos[]
+
+  @@index([iniciales], map: "arbitros_dba_idx")
+  @@index([pais_id], map: "arbitros_pais_id_foreign")
+}
+
+model confederaciones {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  abreviatura String?   @db.VarChar(255)
+  nombre      String    @db.VarChar(255)
+  logo        String?   @db.VarChar(255)
+  fundacion   Int?
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+  paises      paises[]
+}
+
+model equipos {
+  id                                             BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  abreviacion                                    String                     @db.VarChar(255)
+  nombre                                         String                     @db.VarChar(255)
+  logo                                           String?                    @db.VarChar(255)
+  tipo                                           Int
+  fecha_fundacion                                DateTime?                  @db.Date
+  pais_id                                        BigInt                     @db.UnsignedBigInt
+  estadio_id                                     BigInt?                    @db.UnsignedBigInt
+  created_at                                     DateTime?                  @db.Timestamp(0)
+  updated_at                                     DateTime?                  @db.Timestamp(0)
+  estadios                                       estadios?                  @relation(fields: [estadio_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "equipos_estadio_id_foreign")
+  paises                                         paises                     @relation(fields: [pais_id], references: [id], onUpdate: Restrict, map: "equipos_pais_id_foreign")
+  equipos_torneo                                 equipos_torneo[]
+  historial_tecnico_equipo                       historial_tecnico_equipo[]
+  partidos_partidos_equipo_local_idToequipos     partidos[]                 @relation("partidos_equipo_local_idToequipos")
+  partidos_partidos_equipo_visitante_idToequipos partidos[]                 @relation("partidos_equipo_visitante_idToequipos")
+  torneos                                        torneos[]
+
+  @@index([estadio_id], map: "equipos_estadio_id_foreign")
+  @@index([pais_id], map: "equipos_pais_id_foreign")
+}
+
+model equipos_torneo {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  equipo_id  BigInt    @db.UnsignedBigInt
+  torneo_id  BigInt    @db.UnsignedBigInt
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  equipos    equipos   @relation(fields: [equipo_id], references: [id], onUpdate: Restrict, map: "equipos_torneo_equipo_id_foreign")
+  torneos    torneos   @relation(fields: [torneo_id], references: [id], onUpdate: Restrict, map: "equipos_torneo_torneo_id_foreign")
+
+  @@index([equipo_id], map: "equipos_torneo_equipo_id_foreign")
+  @@index([torneo_id], map: "equipos_torneo_torneo_id_foreign")
+}
+
+model estadios {
+  id                 BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre             String     @db.VarChar(255)
+  imagen             String?    @db.VarChar(255)
+  capacidad          Int?
+  ciudad             String?    @db.VarChar(255)
+  direccion          String?    @db.VarChar(255)
+  fecha_inauguracion DateTime?  @db.Date
+  estatus            Boolean    @default(true)
+  comentarios        String?    @db.Text
+  pais_id            BigInt     @db.UnsignedBigInt
+  created_at         DateTime?  @db.Timestamp(0)
+  updated_at         DateTime?  @db.Timestamp(0)
+  equipos            equipos[]
+  paises             paises     @relation(fields: [pais_id], references: [id], onUpdate: Restrict, map: "estadios_pais_id_foreign")
+  partidos           partidos[]
+
+  @@index([pais_id], map: "estadios_pais_id_foreign")
+}
+
+model failed_jobs {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  connection String   @db.Text
+  queue      String   @db.Text
+  payload    String   @db.LongText
+  exception  String   @db.LongText
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model historial_tecnico_equipo {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  equipo_id    BigInt    @db.UnsignedBigInt
+  tecnico_id   BigInt    @db.UnsignedBigInt
+  fecha_inicio DateTime  @db.Date
+  fecha_fin    DateTime? @db.Date
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+  equipos      equipos   @relation(fields: [equipo_id], references: [id], onUpdate: Restrict, map: "historial_tecnico_equipo_equipo_id_foreign")
+  tecnicos     tecnicos  @relation(fields: [tecnico_id], references: [id], onUpdate: Restrict, map: "historial_tecnico_equipo_tecnico_id_foreign")
+
+  @@index([equipo_id], map: "historial_tecnico_equipo_equipo_id_foreign")
+  @@index([tecnico_id], map: "historial_tecnico_equipo_tecnico_id_foreign")
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+model paises {
+  id               BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  codigo           String           @unique(map: "paises_codigo_unique") @db.VarChar(255)
+  nombre           String           @db.VarChar(255)
+  continente       String?          @db.VarChar(255)
+  bandera          String?          @db.VarChar(255)
+  comentarios      String?          @db.Text
+  confederacion_id BigInt?          @db.UnsignedBigInt
+  created_at       DateTime?        @db.Timestamp(0)
+  updated_at       DateTime?        @db.Timestamp(0)
+  arbitros         arbitros[]
+  equipos          equipos[]
+  estadios         estadios[]
+  confederaciones  confederaciones? @relation(fields: [confederacion_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "paises_confederacion_id_foreign")
+  tecnicos         tecnicos[]
+
+  @@index([confederacion_id], map: "paises_confederacion_id_foreign")
+}
+
+model partidos {
+  id                                            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  num_partido                                   Int
+  torneo_id                                     BigInt    @db.UnsignedBigInt
+  jornada                                       String    @db.VarChar(10)
+  fecha                                         DateTime  @db.Date
+  hora                                          DateTime  @db.Time(0)
+  equipo_local_id                               BigInt    @db.UnsignedBigInt
+  equipolocal                                   String    @db.VarChar(100)
+  goleslocal                                    Int
+  tecnico_local_id                              BigInt?   @db.UnsignedBigInt
+  equipo_visitante_id                           BigInt    @db.UnsignedBigInt
+  equipovisitante                               String    @db.VarChar(100)
+  golesvisitante                                Int
+  tecnico_visitante_id                          BigInt?   @db.UnsignedBigInt
+  ganador                                       String?   @db.Char(1)
+  abierto                                       Int?
+  estadio_id                                    BigInt?   @db.UnsignedBigInt
+  nombre_estadio                                String?   @db.VarChar(255)
+  puntos_local                                  Int?
+  puntos_visitante                              Int?
+  comentarios                                   String?   @db.LongText
+  activo                                        Int?
+  procesado                                     Int       @default(0)
+  capturado                                     DateTime? @db.Timestamp(0)
+  fecha_procesado                               DateTime? @db.Date
+  penales                                       Int?      @db.SmallInt
+  tiempoextra                                   Int?      @db.SmallInt
+  goleslocaltiempoextra                         Int?
+  golesvisitantetiempoextra                     Int?
+  goleslocalpenales                             Int?
+  golesvisitantepenales                         Int?
+  asistencia                                    Int?
+  arbitro_id                                    BigInt?   @db.UnsignedBigInt
+  estuve                                        Int       @default(0) @db.SmallInt
+  televisora_id                                 BigInt?   @db.UnsignedBigInt
+  created_at                                    DateTime? @db.Timestamp(0)
+  updated_at                                    DateTime? @db.Timestamp(0)
+  arbitros                                      arbitros? @relation(fields: [arbitro_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "partidos_arbitro_id_foreign")
+  equipos_partidos_equipo_local_idToequipos     equipos   @relation("partidos_equipo_local_idToequipos", fields: [equipo_local_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "partidos_equipo_local_id_foreign")
+  equipos_partidos_equipo_visitante_idToequipos equipos   @relation("partidos_equipo_visitante_idToequipos", fields: [equipo_visitante_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "partidos_equipo_visitante_id_foreign")
+  torneos                                       torneos   @relation(fields: [torneo_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "partidos_torneo_id_foreign")
+  // >>> AÑADE ESTA LÍNEA <<<
+  estadios                                      estadios? @relation(fields: [estadio_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "partidos_estadio_id_foreign")
+
+  @@unique([fecha, hora, equipo_local_id, equipo_visitante_id], map: "partidos$equipos_horarios_idx")
+  @@unique([fecha, hora, estadio_id], map: "partidos$fecha_hora_estadio_idx")
+  @@unique([num_partido, jornada, torneo_id], map: "partidos$num_partido_jornada")
+  @@index([equipo_visitante_id], map: "dba_idx_equipo_visitante")
+  @@index([equipo_local_id, equipo_visitante_id], map: "dba_idx_equipos")
+  @@index([estadio_id], map: "dba_idx_estadio_id")
+  @@index([fecha], map: "idx_dba_partidos_fecha")
+  @@index([arbitro_id], map: "partidos_arbitro_id_foreign")
+  @@index([equipo_local_id], map: "partidos_equipo_local_id_foreign")
+  @@index([equipo_visitante_id], map: "partidos_equipo_visitante_id_foreign")
+  @@index([torneo_id], map: "partidos_torneo_id_foreign")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model password_resets {
+  email      String    @db.VarChar(255)
+  token      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+
+  @@index([email], map: "password_resets_email_index")
+  @@ignore
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt    @db.UnsignedBigInt
+  name           String    @db.VarChar(255)
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?   @db.Text
+  last_used_at   DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model puntos {
+  id           Int       @id @default(autoincrement())
+  equipo_id    Int?
+  puntos       Int?
+  goles_favor  Int?
+  goles_contra Int?
+  jornada      String?   @db.VarChar(10)
+  torneo_id    Int?
+  partido_id   Int?
+  creado       DateTime? @default(now()) @db.Timestamp(0)
+
+  @@index([creado], map: "puntos_creado")
+  @@index([equipo_id], map: "puntos_equipo_fk")
+  @@index([partido_id], map: "puntos_partido_fk")
+  @@index([torneo_id], map: "puntos_torneo_fk")
+}
+
+model tecnicos {
+  id                       BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  codigo                   String                     @unique(map: "tecnicos_codigo_unique") @db.VarChar(255)
+  nombre                   String                     @db.VarChar(255)
+  fecha_nacimiento         DateTime?                  @db.Date
+  nacionalidad_id          BigInt                     @db.UnsignedBigInt
+  foto                     String?                    @db.VarChar(255)
+  descripcion              String?                    @db.Text
+  created_at               DateTime?                  @db.Timestamp(0)
+  updated_at               DateTime?                  @db.Timestamp(0)
+  historial_tecnico_equipo historial_tecnico_equipo[]
+  paises                   paises                     @relation(fields: [nacionalidad_id], references: [id], onUpdate: Restrict, map: "tecnicos_nacionalidad_id_foreign")
+
+  @@index([nacionalidad_id], map: "tecnicos_nacionalidad_id_foreign")
+}
+
+model torneos {
+  id             BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre         String           @db.VarChar(255)
+  inicio         DateTime?        @db.Date
+  fin            DateTime?        @db.Date
+  logo           String?          @db.VarChar(255)
+  sede           String?          @db.VarChar(255)
+  tipo           torneos_tipo     @default(LIGA)
+  status         torneos_status   @default(INACTIVO)
+  comentarios    String?          @db.Text
+  equipo_id      BigInt?          @db.UnsignedBigInt
+  created_at     DateTime?        @db.Timestamp(0)
+  updated_at     DateTime?        @db.Timestamp(0)
+  equipos_torneo equipos_torneo[]
+  partidos       partidos[]
+  equipos        equipos?         @relation(fields: [equipo_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "torneos_equipo_id_foreign")
+
+  @@index([equipo_id], map: "torneos_equipo_id_foreign")
+}
+
+model users {
+  id                BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name              String    @db.VarChar(255)
+  email             String    @unique(map: "users_email_unique") @db.VarChar(255)
+  email_verified_at DateTime? @db.Timestamp(0)
+  password          String    @db.VarChar(255)
+  remember_token    String?   @db.VarChar(100)
+  created_at        DateTime? @db.Timestamp(0)
+  updated_at        DateTime? @db.Timestamp(0)
+}
+
+model usuario {
+  id     Int     @id @default(autoincrement())
+  user   String? @unique(map: "user") @db.VarChar(15)
+  nombre String? @db.VarChar(200)
+  pass   String? @db.VarChar(100)
+}
+
+enum torneos_tipo {
+  LIGA     @map("1")
+  COPA     @map("2")
+  AMISTOSO @map("3")
+}
+
+enum torneos_status {
+  INACTIVO @map("0")
+  ACTIVO   @map("1")
+}
