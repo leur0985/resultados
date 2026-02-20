@@ -1,0 +1,14 @@
+# Configuración y Secretos (¡IMPORTANTE!)
+.env
+config.php
+credentials.json
+*.log
+
+# Carpetas de dependencias (pesan mucho y no se deben subir)
+node_modules/
+dist/
+build/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

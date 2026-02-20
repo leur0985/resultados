@@ -101,20 +101,22 @@ model failed_jobs {
 }
 
 model historial_tecnico_equipo {
-  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  equipo_id    BigInt    @db.UnsignedBigInt
-  tecnico_id   BigInt    @db.UnsignedBigInt
-  fecha_inicio DateTime  @db.Date
-  fecha_fin    DateTime? @db.Date
-  created_at   DateTime? @db.Timestamp(0)
-  updated_at   DateTime? @db.Timestamp(0)
-  equipos      equipos   @relation(fields: [equipo_id], references: [id], onUpdate: Restrict, map: "historial_tecnico_equipo_equipo_id_foreign")
-  tecnicos     tecnicos  @relation(fields: [tecnico_id], references: [id], onUpdate: Restrict, map: "historial_tecnico_equipo_tecnico_id_foreign")
+  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  equipo_id     BigInt    @db.UnsignedBigInt
+  tecnico_id    BigInt    @db.UnsignedBigInt
+  fecha_inicio  DateTime  @db.Date
+  fecha_fin     DateTime? @db.Date
+  created_at    DateTime? @default(now()) @db.Timestamp(0) // Agregamos default(now) para el inicio
+  
+  // Agregamos @updatedAt para que Prisma lo gestione solo
+  updated_at    DateTime? @updatedAt @db.Timestamp(0) 
+  
+  equipos       equipos   @relation(fields: [equipo_id], references: [id], onUpdate: Restrict, map: "historial_tecnico_equipo_equipo_id_foreign")
+  tecnicos      tecnicos  @relation(fields: [tecnico_id], references: [id], onUpdate: Restrict, map: "historial_tecnico_equipo_tecnico_id_foreign")
 
   @@index([equipo_id], map: "historial_tecnico_equipo_equipo_id_foreign")
   @@index([tecnico_id], map: "historial_tecnico_equipo_tecnico_id_foreign")
 }
-
 model migrations {
   id        Int    @id @default(autoincrement()) @db.UnsignedInt
   migration String @db.VarChar(255)

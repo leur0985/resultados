@@ -1,0 +1,160 @@
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+// Función de utilidad fuera del objeto para evitar problemas de 'this'
+const serialize = (data) => {
+    return JSON.parse(JSON.stringify(data, (key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+    ));
+};
+
+const TecnicosController = {
+    async getAll(req, res) {
+        try {
+            console.log("=> Consultando catálogo de técnicos...");
+            const lista = await prisma.tecnicos.findMany({
+                include: { paises: true },
+                orderBy: { id: 'desc' }
+            });
+            res.json(serialize(lista));
+        } catch (error) {
+            console.error("ERROR CRÍTICO EN GET_ALL:");
+            console.error(error); // ESTO aparecerá en tu terminal de VS Code/Node
+            res.status(500).json({ error: error.message });
+        }
+    },
+
+    async create(req, res) {
+        try {
+            const { codigo, nombre, fecha_nacimiento, nacionalidad_id, foto, descripcion } = req.body;
+            const nuevo = await prisma.tecnicos.create({
+                data: {
+                    codigo,
+                    nombre,
+                    fecha_nacimiento: fecha_nacimiento ? new Date(fecha_nacimiento) : null,
+                    nacionalidad_id: BigInt(nacionalidad_id),
+                    foto,
+                    descripcion
+                }
+            });
+            res.json(serialize(nuevo));
+        } catch (error) {
+            console.error("ERROR CRÍTICO EN CREATE:");
+            console.error(error);
+            res.status(500).json({ error: error.message });
+        }
+    },
+
+    async update(req, res) {
+        try {
+            const { id } = req.params;
+            const { nombre, fecha_nacimiento, nacionalidad_id, foto, descripcion, codigo } = req.body;
+            const actualizado = await prisma.tecnicos.update({
+                where: { id: BigInt(id) },
+                data: {
+                    nombre,
+                    codigo,
+                    fecha_nacimiento: fecha_nacimiento ? new Date(fecha_nacimiento) : undefined,
+                    nacionalidad_id: nacionalidad_id ? BigInt(nacionalidad_id) : undefined,
+                    foto,
+                    descripcion
+                }
+            });
+            res.json(serialize(actualizado));
+        } catch (error) {
+            console.error("ERROR CRÍTICO EN UPDATE:");
+            console.error(error);
+            res.status(500).json({ error: error.message });
+        }
+    },
+
+    async destroy(req, res) {
+        try {
+            const { id } = req.params;
+            await prisma.tecnicos.delete({
+                where: { id: BigInt(id) }
+            });
+            res.json({ message: "Eliminado con éxito" });
+        } catch (error) {
+            console.error("ERROR CRÍTICO EN DESTROY:");
+            console.error(error);
+            res.status(500).json({ error: error.message });
+        }
+    },
+
+    async asignarAEquipo(req, res) {
+        try {
+            const { equipo_id, tecnico_id, fecha_inicio } = req.body;
+            const resultado = await prisma.$transaction(async (tx) => {
+                await tx.historial_tecnico_equipo.updateMany({
+                    where: { equipo_id: BigInt(equipo_id), fecha_fin: null },
+                    data: { fecha_fin: new Date(fecha_inicio) }
+                });
+                return await tx.historial_tecnico_equipo.create({
+                    data: {
+                        equipo_id: BigInt(equipo_id),
+                        tecnico_id: BigInt(tecnico_id),
+                        fecha_inicio: new Date(fecha_inicio)
+                    }
+                });
+            });
+            res.json(serialize(resultado));
+        } catch (error) {
+            console.error("ERROR CRÍTICO EN ASIGNAR:");
+            console.error(error);
+            res.status(500).json({ error: error.message });
+        }
+    },
+
+    async getHistorialByEquipo(req, res) {
+        try {
+            const { id } = req.params;
+            const historial = await prisma.historial_tecnico_equipo.findMany({
+                where: { equipo_id: BigInt(id) },
+                include: {
+                    tecnicos: { include: { paises: true } }
+                },
+                orderBy: { fecha_inicio: 'desc' }
+            });
+            res.json(serialize(historial));
+        } catch (error) {
+            console.error("ERROR CRÍTICO EN GET_HISTORIAL:");
+            console.error(error);
+            res.status(500).json({ error: error.message });
+        }
+    },
+    async updateHistorial(req, res) {
+    try {
+        const { id } = req.params;
+        const { fecha_inicio, fecha_fin } = req.body;
+
+        const actualizado = await prisma.historial_tecnico_equipo.update({
+            where: { id: BigInt(id) },
+            data: {
+                fecha_inicio: new Date(fecha_inicio),
+                fecha_fin: fecha_fin ? new Date(fecha_fin) : null
+            }
+        });
+
+        res.json(serialize(actualizado)); // Usa la función serialize que ya tenemos
+    } catch (error) {
+        console.error("Error al actualizar historial:", error);
+        res.status(500).json({ error: "No se pudo actualizar el registro" });
+    }
+},
+
+// Eliminar un registro del historial
+async destroyHistorial(req, res) {
+    try {
+        const { id } = req.params;
+        await prisma.historial_tecnico_equipo.delete({
+            where: { id: BigInt(id) }
+        });
+        res.json({ message: "Registro eliminado" });
+    } catch (error) {
+        res.status(500).json({ error: "No se pudo eliminar el registro" });
+    }
+}
+};
+
+module.exports = TecnicosController;
